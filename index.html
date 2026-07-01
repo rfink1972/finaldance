@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Final Dance — Dynasty Hub</title>
+<style>
+:root{
+  --dark:#0a3d2e;--mid:#1a5d3e;--gold:#ffd740;--gold-dim:#e6c047;
+  --paper:#f6f3e7;--ink:#1b1b1b;--bg:#0d2b21;
+  --grade-a:#22c55e;--grade-b:#3b82f6;--grade-c:#eab308;
+  --grade-d:#f97316;--grade-f:#ef4444;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Trebuchet MS','Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--paper);min-height:100vh;}
+
+/* ── HEADER ── */
+header{background:linear-gradient(135deg,#0a3d2e,#1a5d3e,#0a3d2e);border-bottom:3px solid var(--gold);padding:20px 16px 14px;text-align:center;}
+header h1{font-family:Impact,'Arial Black',sans-serif;font-size:clamp(24px,4vw,42px);color:var(--gold);letter-spacing:2px;text-shadow:0 2px 8px #0006;}
+header p{font-size:13px;opacity:.85;margin-top:4px;}
+
+/* ── TABS ── */
+.tab-bar{display:flex;gap:0;border-bottom:2px solid var(--gold-dim);background:#0a2a1e;overflow-x:auto;}
+.tab-btn{background:none;border:none;color:rgba(255,215,64,.6);padding:12px 22px;font-size:14px;font-weight:bold;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:all .2s;}
+.tab-btn:hover{color:var(--gold);}
+.tab-btn.active{color:var(--gold);border-bottom-color:var(--gold);background:rgba(255,215,64,.07);}
+.tab-pane{display:none;max-width:1200px;margin:0 auto;padding:24px 14px 60px;}
+.tab-pane.active{display:block;}
+
+/* ── CARDS ── */
+.card{background:rgba(255,255,255,.04);border:1px solid rgba(255,215,64,.2);border-radius:12px;padding:18px;}
+.card+.card{margin-top:16px;}
+.card-title{color:var(--gold);font-size:15px;font-weight:bold;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+
+/* ── TRADE BUILDER ── */
+.trade-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:start;}
+@media(max-width:700px){.trade-grid{grid-template-columns:1fr;}}
+.trade-arrow{display:flex;align-items:center;justify-content:center;padding:20px 4px;font-size:28px;color:var(--gold);flex-direction:column;gap:6px;}
+.team-panel{background:rgba(0,0,0,.2);border:1px solid rgba(255,215,64,.15);border-radius:10px;padding:14px;}
+.team-panel h3{color:var(--gold);font-size:14px;margin-bottom:10px;}
+
+select,input[type=text],input[type=number]{
+  width:100%;background:#0a2a1e;color:var(--paper);border:1px solid rgba(255,215,64,.3);
+  border-radius:6px;padding:8px 10px;font-size:13px;margin-bottom:8px;
+}
+select:focus,input:focus{outline:none;border-color:var(--gold);}
+option{background:#0a2a1e;}
+
+.player-list{list-style:none;margin-top:6px;}
+.player-item{
+  display:flex;align-items:center;gap:8px;padding:7px 10px;
+  background:rgba(255,255,255,.04);border-radius:7px;margin-bottom:5px;
+  border:1px solid rgba(255,215,64,.1);cursor:pointer;transition:background .15s;
+}
+.player-item:hover{background:rgba(255,215,64,.08);}
+.player-item.selected{background:rgba(255,215,64,.15);border-color:rgba(255,215,64,.4);}
+.player-item input[type=checkbox]{accent-color:var(--gold);width:15px;height:15px;flex-shrink:0;}
+.pi-name{flex:1;font-size:13px;}
+.pi-pos{font-size:10px;font-weight:bold;padding:2px 5px;border-radius:4px;color:#000;flex-shrink:0;}
+.pos-QB{background:#f59e0b;} .pos-RB{background:#22c55e;} .pos-WR{background:#3b82f6;}
+.pos-TE{background:#a855f7;} .pos-K{background:#6b7280;} .pos-DEF{background:#ef4444;}
+.pi-val{font-size:11px;opacity:.7;flex-shrink:0;}
+.pi-cap{font-size:11px;color:var(--gold-dim);}
+.cap-input{width:55px;padding:3px 5px;font-size:11px;margin:0;background:#0a2a1e;color:var(--gold);border:1px solid rgba(255,215,64,.3);border-radius:4px;text-align:center;}
+
+/* PICKS */
+.pick-row{display:flex;gap:6px;align-items:center;margin-bottom:6px;}
+.pick-row select{margin:0;flex:1;}
+.btn-add-pick{background:rgba(255,215,64,.1);border:1px solid rgba(255,215,64,.3);color:var(--gold);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:12px;}
+.btn-add-pick:hover{background:rgba(255,215,64,.2);}
+.btn-remove{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#fca5a5;padding:2px 7px;border-radius:4px;cursor:pointer;font-size:11px;}
+
+/* ── ANALYZE BTN ── */
+.analyze-btn{
+  display:block;margin:20px auto;padding:14px 48px;
+  background:linear-gradient(135deg,#0a3d2e,#1a5d3e);
+  color:var(--gold);font-family:Impact,sans-serif;font-size:20px;letter-spacing:2px;
+  border:2px solid var(--gold);border-radius:10px;cursor:pointer;
+  box-shadow:0 4px 16px #0005;transition:all .2s;
+}
+.analyze-btn:hover{background:linear-gradient(135deg,#1a5d3e,#2a7d5e);transform:translateY(-1px);}
+.analyze-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+
+/* ── RESULTS ── */
+#results{margin-top:24px;display:none;}
+.result-header{text-align:center;margin-bottom:20px;}
+.verdict-banner{
+  padding:16px 24px;border-radius:10px;text-align:center;font-size:17px;font-weight:bold;margin-bottom:20px;
+}
+.verdict-fair{background:rgba(34,197,94,.2);border:2px solid #22c55e;color:#86efac;}
+.verdict-slight{background:rgba(234,179,8,.15);border:2px solid #eab308;color:#fde047;}
+.verdict-lopsided{background:rgba(239,68,68,.15);border:2px solid #ef4444;color:#fca5a5;}
+
+.grades-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.grade-card{text-align:center;background:rgba(255,255,255,.04);border-radius:12px;padding:20px;}
+.grade-letter{font-size:72px;font-family:Impact,sans-serif;line-height:1;margin:8px 0;}
+.grade-a{color:var(--grade-a);} .grade-b{color:var(--grade-b);} .grade-c{color:var(--grade-c);}
+.grade-d{color:var(--grade-d);} .grade-f{color:var(--grade-f);}
+.grade-team{font-size:14px;color:var(--gold);font-weight:bold;margin-bottom:4px;}
+.grade-ratio{font-size:12px;opacity:.7;}
+
+.breakdown-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+@media(max-width:600px){.breakdown-grid,.grades-row{grid-template-columns:1fr;}}
+.breakdown-panel{background:rgba(255,255,255,.04);border:1px solid rgba(255,215,64,.15);border-radius:10px;padding:14px;}
+.breakdown-panel h4{color:var(--gold);font-size:13px;margin-bottom:10px;}
+.breakdown-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;}
+.breakdown-row:last-child{border-bottom:none;}
+.bp-name{flex:1;}
+.bp-val{color:var(--gold);font-weight:bold;font-size:12px;}
+.total-row{margin-top:8px;padding-top:8px;border-top:2px solid rgba(255,215,64,.3);display:flex;justify-content:space-between;font-weight:bold;}
+.cap-row{margin-top:10px;padding-top:8px;border-top:1px dashed rgba(255,215,64,.2);font-size:12px;opacity:.8;}
+
+.narrative{background:rgba(255,255,255,.04);border:1px solid rgba(255,215,64,.15);border-radius:10px;padding:16px;margin-top:16px;line-height:1.7;font-size:14px;}
+.narrative p{margin-bottom:8px;}
+.narrative strong{color:var(--gold);}
+
+.source-note{text-align:center;font-size:11px;opacity:.5;margin-top:16px;}
+
+/* ── ROSTER CARDS ── */
+.section-title{color:var(--gold);font-size:18px;border-bottom:2px solid var(--gold-dim);padding-bottom:8px;margin:28px 0 16px;display:flex;align-items:center;gap:8px;}
+.team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+.team-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,215,64,.2);border-radius:12px;padding:14px;}
+.team-card h3{color:var(--gold);font-size:15px;margin-bottom:2px;}
+.tc-owner{font-size:11px;opacity:.6;margin-bottom:10px;}
+.roster-row{display:flex;gap:7px;align-items:center;padding:4px 0;font-size:12px;border-bottom:1px solid rgba(255,255,255,.05);}
+.roster-row:last-child{border-bottom:none;}
+.rr-name{flex:1;}
+.rr-meta{font-size:10px;opacity:.55;}
+.rr-val{font-size:10px;color:var(--gold-dim);}
+.bench-label{font-size:10px;opacity:.4;padding:4px 0 2px;letter-spacing:1px;}
+.divider{border-top:1px dashed rgba(255,215,64,.25);margin:6px 0;}
+
+/* ── STATUS / LOADING ── */
+#load-status{text-align:center;padding:40px;color:var(--gold);font-size:15px;}
+.spin{display:inline-block;animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── STANDINGS ── */
+table{width:100%;border-collapse:collapse;}
+thead th{background:rgba(255,215,64,.1);color:var(--gold);text-align:left;padding:9px 12px;font-size:12px;border-bottom:2px solid var(--gold-dim);}
+tbody td{padding:9px 12px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.07);}
+tbody tr:hover{background:rgba(255,215,64,.05);}
+.rank-cell{color:var(--gold);font-weight:bold;}
+
+/* scoring */
+.scoring-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;}
+.sc-card{background:rgba(255,255,255,.04);border-left:3px solid var(--gold);border-radius:8px;padding:12px 14px;font-size:13px;}
+.sc-card b{color:var(--gold);}
+
+/* ── refresh ── */
+.top-bar{display:flex;justify-content:center;align-items:center;gap:14px;margin-top:12px;}
+.refresh-btn{background:var(--gold);color:var(--dark);border:none;padding:7px 18px;border-radius:20px;font-weight:bold;cursor:pointer;font-size:12px;}
+.refresh-btn:hover{background:var(--gold-dim);}
+#last-updated{font-size:11px;opacity:.6;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🏈 Final Dance Dynasty Hub 🏈</h1>
+  <p>2026 · 10-Team Dynasty · PPR + TE Premium · 6-pt Pass TDs · $240 Salary Cap</p>
+  <div class="top-bar">
+    <button class="refresh-btn" onclick="initAll()">↻ Refresh Live Data</button>
+    <span id="last-updated"></span>
+  </div>
+</header>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('trade')">⚖️ Trade Analyzer</button>
+  <button class="tab-btn" onclick="switchTab('roster')">👥 League Rosters</button>
+  <button class="tab-btn" onclick="switchTab('stand')">📊 Standings</button>
+  <button class="tab-btn" onclick="switchTab('rules')">⚙️ Scoring Rules</button>
+</div>
+
+<!-- ══ TAB: TRADE ANALYZER ══ -->
+<div id="tab-trade" class="tab-pane active">
+  <div id="load-status"><span class="spin">⏳</span> Loading league &amp; value data…</div>
+  <div id="trade-ui" style="display:none;">
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-title">ℹ️ How to use</div>
+      <p style="font-size:13px;opacity:.8;line-height:1.6;">
+        Select both teams, check the players &amp; picks each side gives away, enter each player's cap hit (transfers with trade), then click <strong style="color:var(--gold)">Analyze Trade</strong>.
+        Values from <strong style="color:var(--gold)">DynastyProcess</strong> (updated weekly, 1-QB PPR TEP scale).
+      </p>
+    </div>
+
+    <div class="trade-grid">
+      <!-- TEAM A -->
+      <div class="team-panel" id="panel-a">
+        <h3>🔵 Team A — gives away:</h3>
+        <select id="team-a-select" onchange="buildRoster('a')"><option value="">— Select Team A —</option></select>
+        <div id="roster-a"></div>
+        <div id="picks-a"><b style="font-size:12px;color:var(--gold-dim);">Picks given:</b></div>
+        <button class="btn-add-pick" onclick="addPick('a')" style="margin-top:6px;">+ Add Pick</button>
+      </div>
+
+      <div class="trade-arrow">⇄<br><span style="font-size:11px;opacity:.5;">trade</span></div>
+
+      <!-- TEAM B -->
+      <div class="team-panel" id="panel-b">
+        <h3>🔴 Team B — gives away:</h3>
+        <select id="team-b-select" onchange="buildRoster('b')"><option value="">— Select Team B —</option></select>
+        <div id="roster-b"></div>
+        <div id="picks-b"><b style="font-size:12px;color:var(--gold-dim);">Picks given:</b></div>
+        <button class="btn-add-pick" onclick="addPick('b')" style="margin-top:6px;">+ Add Pick</button>
+      </div>
+    </div>
+
+    <button class="analyze-btn" onclick="analyzeTrade()">🏈 ANALYZE TRADE</button>
+
+    <!-- RESULTS -->
+    <div id="results">
+      <div id="verdict-banner" class="verdict-banner"></div>
+
+      <div class="grades-row">
+        <div class="grade-card" id="grade-a-card">
+          <div class="grade-team" id="grade-a-team"></div>
+          <div class="grade-letter" id="grade-a-letter"></div>
+          <div class="grade-ratio" id="grade-a-sub"></div>
+        </div>
+        <div class="grade-card" id="grade-b-card">
+          <div class="grade-team" id="grade-b-team"></div>
+          <div class="grade-letter" id="grade-b-letter"></div>
+          <div class="grade-ratio" id="grade-b-sub"></div>
+        </div>
+      </div>
+
+      <div class="breakdown-grid">
+        <div class="breakdown-panel" id="breakdown-a"></div>
+        <div class="breakdown-panel" id="breakdown-b"></div>
+      </div>
+
+      <div class="narrative" id="narrative"></div>
+      <div class="source-note">Dynasty values: DynastyProcess (1QB PPR TEP) · Updated weekly · Pick values derived from consensus ECR curve</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB: ROSTERS ══ -->
+<div id="tab-roster" class="tab-pane">
+  <div class="section-title">👥 Team Rosters</div>
+  <div id="roster-grid" class="team-grid"></div>
+</div>
+
+<!-- ══ TAB: STANDINGS ══ -->
+<div id="tab-stand" class="tab-pane">
+  <div class="section-title">📊 Standings</div>
+  <table><thead><tr><th>#</th><th>Team</th><th>Owner</th><th>W-L-T</th><th>Pts For</th><th>Waiver Used</th></tr></thead>
+  <tbody id="standings-body"></tbody></table>
+</div>
+
+<!-- ══ TAB: RULES ══ -->
+<div id="tab-rules" class="tab-pane">
+  <div class="section-title">⚙️ Scoring Rules</div>
+  <div class="scoring-grid">
+    <div class="sc-card"><b>PPR + TE Premium</b><br>+1 per catch for all; extra +1 for TEs</div>
+    <div class="sc-card"><b>Passing TDs</b><br>+6 pts (equal to rushing TDs)</div>
+    <div class="sc-card"><b>Passing Yards</b><br>+0.02/yd (50 yds = 1 pt)</div>
+    <div class="sc-card"><b>300/400+ Yd Passing Game</b><br>+3 / +4 bonus</div>
+    <div class="sc-card"><b>40+/50+ Yd Pass TD</b><br>+1 / +2 bonus</div>
+    <div class="sc-card"><b>Rush/Rec TDs</b><br>+6 · 40+ bonus +3 · 50+ bonus +4</div>
+    <div class="sc-card"><b>100-199 Yd Rush Game</b><br>+2 bonus · 200+ yd: +3</div>
+    <div class="sc-card"><b>100-199 Yd Rec Game</b><br>+1 bonus · 200+ yd: +2</div>
+    <div class="sc-card"><b>Kicker — Long FGs</b><br>40-49 yd: +7 · 50+ yd: +10</div>
+    <div class="sc-card"><b>Defense — Yards Allowed</b><br>Deep negative scaling at 400+ yds allowed</div>
+    <div class="sc-card"><b>Salary Cap</b><br>$240 · Transfers with traded players</div>
+    <div class="sc-card"><b>Playoffs</b><br>6 teams qualify · Start Week 15</div>
+    <div class="sc-card"><b>Trade Deadline</b><br>Week 12</div>
+    <div class="sc-card"><b>Waivers</b><br>FAAB · $100 budget · Wednesday 3am</div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+//  CONSTANTS
+// ════════════════════════════════════════════
+const LEAGUE_ID = "1312179953294381056";
+const CAP_MAX   = 240;
+
+// Static player map: sleeper_id → [name, pos, nfl_team]
+const PM = {"9508":["Tyjae Spears","RB","TEN"],"12493":["Oronde Gadsden","TE","LAC"],"12534":["Kyle Monangai","RB","CHI"],"4018":["Joe Mixon","RB","FA"],"7526":["Jaylen Waddle","WR","DEN"],"9226":["De'Von Achane","RB","MIA"],"4227":["Harrison Butker","K","KC"],"6786":["CeeDee Lamb","WR","DAL"],"6904":["Jalen Hurts","QB","PHI"],"4046":["Patrick Mahomes","QB","KC"],"9758":["C.J. Stroud","QB","HOU"],"12529":["TreVeyon Henderson","RB","NE"],"12474":["Woody Marks","RB","HOU"],"7049":["Jauan Jennings","WR","MIN"],"7569":["Nico Collins","WR","HOU"],"8144":["Chris Olave","WR","NO"],"4892":["Baker Mayfield","QB","TB"],"8151":["Kenneth Walker","RB","KC"],"19":["Joe Flacco","QB","CIN"],"11786":["Cam Little","K","JAX"],"6130":["Devin Singletary","RB","NYG"],"3163":["Jared Goff","QB","DET"],"10236":["Dalton Kincaid","TE","BUF"],"9480":["Brenton Strange","TE","JAX"],"5850":["Josh Jacobs","RB","GB"],"9756":["Jordan Addison","WR","MIN"],"12518":["Tyler Warren","TE","IND"],"7564":["Ja'Marr Chase","WR","CIN"],"5844":["T.J. Hockenson","TE","MIN"],"5857":["Noah Fant","TE","NO"],"8110":["Jake Ferguson","TE","DAL"],"5001":["Dalton Schultz","TE","HOU"],"12489":["RJ Harvey","RB","DEN"],"11563":["Bo Nix","QB","DEN"],"11560":["Caleb Williams","QB","CHI"],"7543":["Travis Etienne","RB","NO"],"8136":["Rachaad White","RB","WAS"],"2133":["Davante Adams","WR","LAR"],"6797":["Justin Herbert","QB","LAC"],"6804":["Jordan Love","QB","GB"],"9221":["Jahmyr Gibbs","RB","DET"],"10229":["Rashee Rice","WR","KC"],"12524":["Shedeur Sanders","QB","CLE"],"11631":["Brian Thomas","WR","JAX"],"8155":["Breece Hall","RB","NYJ"],"12481":["Cam Skattebo","RB","NYG"],"7594":["Chuba Hubbard","RB","CAR"],"5870":["Daniel Jones","QB","IND"],"11638":["Ricky Pearsall","WR","SF"],"12483":["Jack Bech","WR","LV"],"4866":["Saquon Barkley","RB","PHI"],"11620":["Rome Odunze","WR","CHI"],"7547":["Amon-Ra St. Brown","WR","DET"],"12530":["Travis Hunter","WR","JAX"],"12512":["Quinshon Judkins","RB","CLE"],"9224":["Chase Brown","RB","CIN"],"4217":["George Kittle","TE","SF"],"5967":["Tony Pollard","RB","TEN"],"11539":["Jake Bates","K","DET"],"7567":["Kenny Gainwell","RB","TB"],"4199":["Aaron Jones","RB","MIN"],"9504":["Kayshon Boutte","WR","NE"],"6770":["Joe Burrow","QB","CIN"],"12514":["Emeka Egbuka","WR","TB"],"5947":["Jakobi Meyers","WR","JAX"],"9997":["Zay Flowers","WR","BAL"],"11603":["AJ Barner","TE","SEA"],"4984":["Josh Allen","QB","BUF"],"11564":["Drake Maye","QB","NE"],"3214":["Hunter Henry","TE","NE"],"8183":["Brock Purdy","QB","SF"],"9228":["Bryce Young","QB","CAR"],"7021":["Rico Dowdle","RB","PIT"],"1466":["Travis Kelce","TE","KC"],"7525":["DeVonta Smith","WR","PHI"],"11566":["Jayden Daniels","QB","WAS"],"9753":["Zach Charbonnet","RB","SEA"],"11635":["Ladd McConkey","WR","LAC"],"4881":["Lamar Jackson","QB","BAL"],"8167":["Christian Watson","WR","GB"],"4034":["Christian McCaffrey","RB","SF"],"5859":["A.J. Brown","WR","NE"],"8408":["Jordan Mason","RB","MIN"],"4035":["Alvin Kamara","RB","NO"],"2747":["Jason Myers","K","SEA"],"1479":["Keenan Allen","WR","FA"],"12501":["Matthew Golden","WR","GB"],"8137":["George Pickens","WR","DAL"],"8138":["James Cook","RB","BUF"],"12527":["Ashton Jeanty","RB","LV"],"4988":["Nick Chubb","RB","FA"],"12507":["Omarion Hampton","RB","LAC"],"3198":["Derrick Henry","RB","BAL"],"8676":["Rashid Shaheed","WR","SEA"],"9754":["Quentin Johnston","WR","LAC"],"5872":["Deebo Samuel","WR","FA"],"3321":["Tyreek Hill","WR","FA"],"12504":["Kaleb Johnson","RB","PIT"],"10859":["Sam LaPorta","TE","DET"],"11632":["Malik Nabers","WR","NYG"],"11604":["Brock Bowers","TE","LV"],"9484":["Tucker Kraft","TE","GB"],"12484":["Jayden Higgins","WR","HOU"],"8112":["Drake London","WR","ATL"],"6813":["Jonathan Taylor","RB","IND"],"5012":["Mark Andrews","TE","BAL"],"4037":["Chris Godwin","WR","TB"],"5927":["Terry McLaurin","WR","WAS"],"6794":["Justin Jefferson","WR","MIN"],"8228":["Jaylen Warren","RB","PIT"],"5892":["David Montgomery","RB","HOU"],"8146":["Garrett Wilson","WR","NYJ"],"5022":["Dallas Goedert","TE","PHI"],"12517":["Colston Loveland","TE","CHI"],"6826":["Cole Kmet","TE","CHI"],"5846":["DK Metcalf","WR","PIT"],"12533":["Jacory Croskey-Merritt","RB","WAS"],"9509":["Bijan Robinson","RB","ATL"],"11624":["Xavier Worthy","WR","KC"],"11627":["Troy Franklin","WR","DEN"],"10232":["Michael Wilson","WR","ARI"],"11655":["Tyrone Tracy","RB","NYG"],"7523":["Trevor Lawrence","QB","JAX"],"2216":["Mike Evans","WR","SF"],"1945":["Chris Boswell","K","PIT"],"9488":["Jaxon Smith-Njigba","WR","SEA"],"5045":["Courtland Sutton","WR","DEN"],"12526":["Tetairoa McMillan","WR","CAR"],"7611":["Rhamondre Stevenson","RB","NE"],"11628":["Marvin Harrison","WR","ARI"],"12545":["Tyler Shough","QB","NO"],"11533":["Brandon Aubrey","K","DAL"],"8205":["Isiah Pacheco","RB","DET"],"96":["Aaron Rodgers","QB","PIT"],"9493":["Puka Nacua","WR","LAR"],"8150":["Kyren Williams","RB","LAR"],"2449":["Stefon Diggs","WR","FA"],"6801":["Tee Higgins","WR","CIN"],"7553":["Kyle Pitts","TE","ATL"],"11584":["Bucky Irving","RB","TB"],"6768":["Tua Tagovailoa","QB","ATL"],"12506":["Harold Fannin","TE","CLE"],"8142":["Alec Pierce","WR","IND"],"3294":["Dak Prescott","QB","DAL"],"6806":["J.K. Dobbins","RB","DEN"],"4983":["DJ Moore","WR","BUF"],"8259":["Cameron Dicker","K","LAC"],"3451":["Ka'imi Fairbairn","K","HOU"],"8148":["Jameson Williams","WR","DET"],"11589":["Trey Benson","RB","ARI"],"8130":["Trey McBride","TE","ARI"],"421":["Matthew Stafford","QB","LAR"],"8126":["Wan'Dale Robinson","WR","TEN"],"7002":["Juwan Johnson","TE","NO"],"6650":["Chase McLaughlin","K","TB"],"6790":["D'Andre Swift","RB","CHI"],"8121":["Romeo Doubs","WR","NE"],"12508":["Jaxson Dart","QB","NYG"],"6819":["Michael Pittman","WR","PIT"],"17":["Matt Prater","K","FA"],"7588":["Javonte Williams","RB","DAL"]};
+
+const NFL_TEAMS = {ARI:"Cardinals",ATL:"Falcons",BAL:"Ravens",BUF:"Bills",CAR:"Panthers",CHI:"Bears",CIN:"Bengals",CLE:"Browns",DAL:"Cowboys",DEN:"Broncos",DET:"Lions",GB:"Packers",HOU:"Texans",IND:"Colts",JAX:"Jaguars",KC:"Chiefs",LAC:"Chargers",LAR:"Rams",LV:"Raiders",MIA:"Dolphins",MIN:"Vikings",NE:"Patriots",NO:"Saints",NYG:"Giants",NYJ:"Jets",PHI:"Eagles",PIT:"Steelers",SEA:"Seahawks",SF:"49ers",TB:"Buccaneers",TEN:"Titans",WAS:"Commanders"};
+
+// ════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════
+let STATE = { rosters:[], users:[], dpValues:{}, dpPicks:[], loaded:false };
+
+// ════════════════════════════════════════════
+//  TABS
+// ════════════════════════════════════════════
+function switchTab(name){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>{
+    const names=['trade','roster','stand','rules'];
+    b.classList.toggle('active', names[i]===name);
+  });
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+// ════════════════════════════════════════════
+//  LOAD DATA
+// ════════════════════════════════════════════
+async function initAll(){
+  document.getElementById('load-status').style.display='block';
+  document.getElementById('trade-ui').style.display='none';
+  try{
+    const [rosters, users, dpRaw, pickRaw] = await Promise.all([
+      fetch(`https://api.sleeper.app/v1/league/${LEAGUE_ID}/rosters`).then(r=>r.json()),
+      fetch(`https://api.sleeper.app/v1/league/${LEAGUE_ID}/users`).then(r=>r.json()),
+      fetch('https://raw.githubusercontent.com/dynastyprocess/data/master/files/values-players.csv').then(r=>r.text()),
+      fetch('https://raw.githubusercontent.com/dynastyprocess/data/master/files/values-picks.csv').then(r=>r.text())
+    ]);
+    STATE.rosters = rosters;
+    STATE.users   = users;
+    STATE.dpValues = parseDPPlayers(dpRaw);
+    STATE.dpPicks  = parseDPPicks(pickRaw, STATE.dpValues);
+    STATE.loaded   = true;
+    document.getElementById('load-status').style.display='none';
+    document.getElementById('trade-ui').style.display='block';
+    document.getElementById('last-updated').textContent = 'Updated '+new Date().toLocaleTimeString();
+    buildTeamDropdowns();
+    buildRosterTab();
+    buildStandingsTab();
+  }catch(e){
+    document.getElementById('load-status').innerHTML=`<span style="color:#f87171">Error loading data: ${e.message}<br><br><button class="refresh-btn" onclick="initAll()">Retry</button></span>`;
+  }
+}
+
+// ────── CSV parsers ──────
+function parseCSV(text){
+  const lines = text.trim().split('\n');
+  const headers = csvRow(lines[0]);
+  return lines.slice(1).map(l=>{
+    const vals = csvRow(l);
+    const obj={};
+    headers.forEach((h,i)=>obj[h]=(vals[i]||'').replace(/^"|"$/g,''));
+    return obj;
+  });
+}
+function csvRow(line){
+  const out=[];let cur='',inQ=false;
+  for(const c of line){if(c==='"'){inQ=!inQ;}else if(c===','&&!inQ){out.push(cur);cur='';}else{cur+=c;}}
+  out.push(cur);return out;
+}
+function normName(n){return n.toLowerCase().replace(/[^a-z0-9]/g,'');}
+
+function parseDPPlayers(csv){
+  const rows = parseCSV(csv);
+  const map = {};
+  rows.forEach(r=>{
+    const v1 = parseFloat(r.value_1qb);
+    const ecr = parseFloat(r.ecr_1qb);
+    const age = parseFloat(r.age)||0;
+    if(!isNaN(v1) && v1>0){
+      map[normName(r.player)] = {name:r.player, pos:r.pos, age, ecr, value:Math.round(v1)};
+    }
+  });
+  return map;
+}
+
+function parseDPPicks(csv, playerMap){
+  const rows = parseCSV(csv);
+  const playerList = Object.values(playerMap).sort((a,b)=>a.ecr-b.ecr);
+  const picks = [];
+  rows.forEach(r=>{
+    const ecr = parseFloat(r.ecr_1qb);
+    if(isNaN(ecr)) return;
+    const val = rankToValue(ecr, playerList);
+    picks.push({name:r.player, ecr, value:val});
+  });
+  picks.sort((a,b)=>a.ecr-b.ecr);
+  return picks;
+}
+
+function rankToValue(rank, playerList){
+  const below = playerList.filter(p=>p.ecr<=rank);
+  const above  = playerList.filter(p=>p.ecr>rank);
+  if(!below.length) return playerList[0].value;
+  if(!above.length) return Math.max(0, playerList[playerList.length-1].value);
+  const p1=below[below.length-1], p2=above[0];
+  if(p2.ecr===p1.ecr) return p1.value;
+  const t=(rank-p1.ecr)/(p2.ecr-p1.ecr);
+  return Math.round(p1.value + t*(p2.value-p1.value));
+}
+
+// ────── Lookup helpers ──────
+function playerValue(sleeperId){
+  if(!PM[sleeperId]) return 0;
+  const [name] = PM[sleeperId];
+  const key = normName(name);
+  const dp = STATE.dpValues[key];
+  return dp ? dp.value : 0;
+}
+function playerAge(sleeperId){
+  if(!PM[sleeperId]) return null;
+  const [name] = PM[sleeperId];
+  const dp = STATE.dpValues[normName(name)];
+  return dp ? dp.age : null;
+}
+function getUser(uid){ return STATE.users.find(u=>u.user_id===uid); }
+function teamLabel(user){ return (user?.metadata?.team_name) || user?.display_name || "Unclaimed"; }
+function rosterOf(rid){ return STATE.rosters.find(r=>r.roster_id===rid); }
+
+function playerInfo(pid){
+  if(PM[pid]){ const [n,p,t]=PM[pid]; return {name:n,pos:p,team:t}; }
+  if(NFL_TEAMS[pid]) return {name:NFL_TEAMS[pid]+' D/ST',pos:'DEF',team:pid};
+  return {name:'Player #'+pid,pos:'?',team:''};
+}
+
+// ════════════════════════════════════════════
+//  TEAM DROPDOWNS
+// ════════════════════════════════════════════
+function buildTeamDropdowns(){
+  const options = ['<option value="">— Select —</option>'];
+  STATE.rosters.forEach(r=>{
+    const u = getUser(r.owner_id);
+    options.push(`<option value="${r.roster_id}">${teamLabel(u)} (${u?.display_name||'?'})</option>`);
+  });
+  document.getElementById('team-a-select').innerHTML = options.join('');
+  document.getElementById('team-b-select').innerHTML = options.join('');
+}
+
+// ════════════════════════════════════════════
+//  ROSTER SELECTION UI
+// ════════════════════════════════════════════
+function buildRoster(side){
+  const selectEl = document.getElementById(`team-${side}-select`);
+  const rid = parseInt(selectEl.value);
+  const container = document.getElementById(`roster-${side}`);
+  const picksContainer = document.getElementById(`picks-${side}`);
+  container.innerHTML='';
+  picksContainer.innerHTML=`<b style="font-size:12px;color:var(--gold-dim);">Picks given:</b>`;
+  if(!rid) return;
+
+  const roster = rosterOf(rid);
+  if(!roster) return;
+
+  const starters = new Set(roster.starters.filter(p=>p&&p!=='0'));
+  const allPlayers = roster.players || [];
+  const posOrder={QB:0,RB:1,WR:2,TE:3,FLEX:4,K:5,DEF:6};
+  const sorted = [...allPlayers].sort((a,b)=>{
+    const pa=playerInfo(a).pos, pb=playerInfo(b).pos;
+    return (posOrder[pa]??9)-(posOrder[pb]??9);
+  });
+
+  let currentGroup = null;
+  sorted.forEach(pid=>{
+    const isStarter = starters.has(pid);
+    if(isStarter && currentGroup!=='starter'){
+      currentGroup='starter';
+      const lbl=document.createElement('div');
+      lbl.className='bench-label';lbl.textContent='STARTERS';container.appendChild(lbl);
+    }
+    if(!isStarter && currentGroup!=='bench'){
+      currentGroup='bench';
+      const lbl=document.createElement('div');
+      lbl.className='bench-label';lbl.style.marginTop='6px';lbl.textContent='BENCH';
+      container.appendChild(lbl);
+    }
+    const info = playerInfo(pid);
+    const val  = playerValue(pid);
+    const age  = playerAge(pid);
+    const li = document.createElement('label');
+    li.className='player-item';
+    li.setAttribute('data-pid', pid);
+    li.innerHTML=`
+      <input type="checkbox" value="${pid}">
+      <span class="pi-pos pos-${info.pos}">${info.pos}</span>
+      <span class="pi-name">${info.name} <span class="rr-meta">${info.team}${age?' · '+age+'y':''}</span></span>
+      <span class="pi-val">${val?val.toLocaleString():'-'}</span>
+      <span class="pi-cap">$<input class="cap-input" type="number" value="0" min="0" max="240" onclick="event.stopPropagation()" oninput="event.stopPropagation()" placeholder="cap"></span>
+    `;
+    li.querySelector('input[type=checkbox]').addEventListener('change',e=>{
+      li.classList.toggle('selected',e.target.checked);
+    });
+    container.appendChild(li);
+  });
+}
+
+// ════════════════════════════════════════════
+//  PICKS UI
+// ════════════════════════════════════════════
+function addPick(side){
+  const container = document.getElementById(`picks-${side}`);
+  const opts = STATE.dpPicks.slice(0,40).map(p=>
+    `<option value="${p.value}">${p.name} (~${p.value.toLocaleString()})</option>`
+  ).join('');
+  const row = document.createElement('div');
+  row.className='pick-row';
+  row.innerHTML=`<select>${opts}</select><button class="btn-remove" onclick="this.parentElement.remove()">✕</button>`;
+  container.appendChild(row);
+}
+
+// ════════════════════════════════════════════
+//  ANALYZE
+// ════════════════════════════════════════════
+function getSelectedItems(side){
+  const container = document.getElementById(`roster-${side}`);
+  const picksContainer = document.getElementById(`picks-${side}`);
+  const players=[];
+  container.querySelectorAll('.player-item.selected').forEach(li=>{
+    const pid = li.dataset.pid;
+    const val = playerValue(pid);
+    const info = playerInfo(pid);
+    const age  = playerAge(pid);
+    const cap  = parseInt(li.querySelector('.cap-input').value)||0;
+    players.push({pid, val, info, age, cap, isPick:false});
+  });
+  picksContainer.querySelectorAll('.pick-row').forEach(row=>{
+    const sel = row.querySelector('select');
+    const val = parseInt(sel.value)||0;
+    const name = sel.options[sel.selectedIndex]?.text.split(' (~')[0] || 'Pick';
+    players.push({pid:null, val, info:{name,pos:'PICK',team:''}, age:null, cap:0, isPick:true});
+  });
+  return players;
+}
+
+function getTeamName(side){
+  const sel = document.getElementById(`team-${side}-select`);
+  return sel.options[sel.selectedIndex]?.text || 'Team '+side.toUpperCase();
+}
+
+function grade(ratio){
+  if(ratio>=1.20) return 'A+';
+  if(ratio>=1.10) return 'A';
+  if(ratio>=1.03) return 'B';
+  if(ratio>=0.97) return 'C';
+  if(ratio>=0.90) return 'D';
+  return 'F';
+}
+function gradeClass(g){ return 'grade-'+g[0].toLowerCase(); }
+
+function analyzeTrade(){
+  if(!STATE.loaded) return;
+  const aItems = getSelectedItems('a');
+  const bItems = getSelectedItems('b');
+  if(!aItems.length && !bItems.length){ alert('Select at least one player or pick on each side.'); return; }
+
+  const aVal   = aItems.reduce((s,p)=>s+p.val,0);
+  const bVal   = bItems.reduce((s,p)=>s+p.val,0);
+  const aCap   = aItems.reduce((s,p)=>s+p.cap,0);
+  const bCap   = bItems.reduce((s,p)=>s+p.cap,0);
+  const teamA  = getTeamName('a');
+  const teamB  = getTeamName('b');
+
+  // A receives bVal for giving aVal; B receives aVal for giving bVal
+  const aRatio = bVal>0 ? (aVal>0 ? bVal/aVal : 2.0) : 0;
+  const bRatio = aVal>0 ? (bVal>0 ? aVal/bVal : 2.0) : 0;
+  const aGrade = grade(aRatio);
+  const bGrade = grade(bRatio);
+
+  // Verdict
+  const diff = Math.abs(aVal-bVal);
+  const maxV  = Math.max(aVal,bVal,1);
+  const pct   = diff/maxV;
+  let verdictText, verdictClass;
+  const winner = aVal<bVal ? teamA : teamB;
+  if(pct<0.08){
+    verdictText='⚖️ FAIR TRADE — Both sides get comparable dynasty value';
+    verdictClass='verdict-fair';
+  } else if(pct<0.20){
+    verdictText=`📊 SLIGHT EDGE — ${winner} wins this trade`;
+    verdictClass='verdict-slight';
+  } else {
+    verdictText=`🚨 LOPSIDED — ${winner} wins decisively`;
+    verdictClass='verdict-lopsided';
+  }
+
+  // Display results
+  document.getElementById('results').style.display='block';
+  const vb=document.getElementById('verdict-banner');
+  vb.textContent=verdictText; vb.className='verdict-banner '+verdictClass;
+
+  // Grades
+  function setGrade(side,name,gr,ratio,gives,gets){
+    document.getElementById(`grade-${side}-team`).textContent=name;
+    const gl=document.getElementById(`grade-${side}-letter`);
+    gl.textContent=gr; gl.className='grade-letter '+gradeClass(gr);
+    document.getElementById(`grade-${side}-sub`).textContent=
+      `Gets ${gets.toLocaleString()} · Gives ${gives.toLocaleString()} · Ratio ${ratio.toFixed(2)}×`;
+  }
+  setGrade('a',teamA,aGrade,aRatio,aVal,bVal);
+  setGrade('b',teamB,bGrade,bRatio,bVal,aVal);
+
+  // Breakdowns
+  function buildBreakdown(elId,teamName,gives,gets,capOut,capIn){
+    const el=document.getElementById(elId);
+    const giveRows=gives.map(p=>`<div class="breakdown-row"><span class="bp-name">📤 ${p.info.name}</span><span class="bp-val">${p.val?p.val.toLocaleString():'-'}${p.cap?` ($${p.cap})`:''}</span></div>`).join('');
+    const getRows=gets.map(p=>`<div class="breakdown-row"><span class="bp-name">📥 ${p.info.name}</span><span class="bp-val">${p.val?p.val.toLocaleString():'-'}${p.cap?` ($${p.cap})`:''}</span></div>`).join('');
+    const netCap=capIn-capOut;
+    el.innerHTML=`
+      <h4>${teamName}</h4>
+      ${giveRows||'<div class="breakdown-row"><span style="opacity:.5">— nothing given —</span></div>'}
+      <div class="breakdown-row" style="font-size:11px;opacity:.5">⬇ receives:</div>
+      ${getRows||'<div class="breakdown-row"><span style="opacity:.5">— nothing received —</span></div>'}
+      <div class="total-row"><span>Net value swing</span><span style="color:${gets.reduce((s,p)=>s+p.val,0)>=gives.reduce((s,p)=>s+p.val,0)?'#86efac':'#fca5a5'}">${(gets.reduce((s,p)=>s+p.val,0)-gives.reduce((s,p)=>s+p.val,0)).toLocaleString()}</span></div>
+      <div class="cap-row">Cap: gives $${capOut} · receives $${capIn} · net <strong style="color:${netCap>=0?'#fca5a5':'#86efac'}">${netCap>=0?'+':''}${netCap}</strong></div>
+    `;
+  }
+  buildBreakdown('breakdown-a',teamA,aItems,bItems,aCap,bCap);
+  buildBreakdown('breakdown-b',teamB,bItems,aItems,bCap,aCap);
+
+  // Narrative
+  buildNarrative(teamA,teamB,aItems,bItems,aGrade,bGrade,aRatio,bRatio);
+
+  document.getElementById('results').scrollIntoView({behavior:'smooth'});
+}
+
+function buildNarrative(teamA,teamB,aGives,bGives,aGrade,bGrade,aRatio,bRatio){
+  const aVal=aGives.reduce((s,p)=>s+p.val,0);
+  const bVal=bGives.reduce((s,p)=>s+p.val,0);
+  const aNames=aGives.map(p=>p.info.name).join(', ')||'nothing';
+  const bNames=bGives.map(p=>p.info.name).join(', ')||'nothing';
+
+  // Age analysis
+  const aAges=aGives.filter(p=>p.age).map(p=>p.age);
+  const bAges=bGives.filter(p=>p.age).map(p=>p.age);
+  const aAvgAge=aAges.length?aAges.reduce((s,a)=>s+a,0)/aAges.length:null;
+  const bAvgAge=bAges.length?bAges.reduce((s,a)=>s+a,0)/bAges.length:null;
+
+  let paragraphs=[];
+
+  // Opening
+  if(Math.abs(aVal-bVal)<aVal*0.08){
+    paragraphs.push(`<p>This trade looks roughly balanced on dynasty value. <strong>${teamA}</strong> sends ${aNames} (${aVal.toLocaleString()} pts) and receives ${bNames} (${bVal.toLocaleString()} pts) — a difference of only ${Math.abs(aVal-bVal).toLocaleString()} points.</p>`);
+  } else {
+    const win=aVal<bVal?teamA:teamB;
+    const lose=aVal<bVal?teamB:teamA;
+    paragraphs.push(`<p><strong>${win}</strong> appears to win this trade. They send ${aVal<bVal?aNames:bNames} and receive ${aVal<bVal?bNames:aNames} — a value swing of ${Math.abs(aVal-bVal).toLocaleString()} dynasty points in their favor.</p>`);
+  }
+
+  // Age / dynasty window
+  if(aAvgAge&&bAvgAge){
+    if(bAvgAge<aAvgAge-2){
+      paragraphs.push(`<p>⏳ <strong>Dynasty angle:</strong> ${teamA} is acquiring younger assets (avg age ${bAvgAge.toFixed(1)}) compared to what they're giving up (avg age ${aAvgAge.toFixed(1)}). Younger players carry higher future ceiling in dynasty, making this trade potentially more favorable for ${teamA} long-term than the current value suggests.</p>`);
+    } else if(aAvgAge<bAvgAge-2){
+      paragraphs.push(`<p>⏳ <strong>Dynasty angle:</strong> ${teamB} is acquiring younger assets (avg age ${aAvgAge.toFixed(1)}) compared to what they're giving up (avg age ${bAvgAge.toFixed(1)}). The age profile favors ${teamB}'s long-term rebuild.</p>`);
+    }
+  }
+
+  // Win-now vs rebuild framing
+  const aHasOld=aGives.some(p=>p.age&&p.age>=30);
+  const bHasOld=bGives.some(p=>p.age&&p.age>=30);
+  const aHasYoung=aGives.some(p=>p.age&&p.age<=24);
+  const bHasYoung=bGives.some(p=>p.age&&p.age<=24);
+  if(aHasOld&&bHasYoung){
+    paragraphs.push(`<p>🏆 This looks like a <strong>win-now move</strong> for ${teamB} — they're acquiring proven, older contributors while ${teamA} collects youth. This trade makes sense if ${teamB} is in contention mode and ${teamA} is rebuilding.</p>`);
+  } else if(bHasOld&&aHasYoung){
+    paragraphs.push(`<p>🔄 This looks like a <strong>rebuild move</strong> for ${teamA} — they're trading away established talent for younger assets with higher upside. A smart strategy if ${teamA} is in a rebuild window.</p>`);
+  }
+
+  // Grade summary
+  paragraphs.push(`<p>📋 <strong>Grades:</strong> ${teamA} earns a <strong>${aGrade}</strong> (ratio: ${aRatio.toFixed(2)}×) · ${teamB} earns a <strong>${bGrade}</strong> (ratio: ${bRatio.toFixed(2)}×). Values from DynastyProcess 1QB PPR TEP, updated weekly.</p>`);
+
+  document.getElementById('narrative').innerHTML=paragraphs.join('');
+}
+
+// ════════════════════════════════════════════
+//  ROSTER TAB
+// ════════════════════════════════════════════
+function buildRosterTab(){
+  const grid=document.getElementById('roster-grid');
+  const posOrder={QB:0,RB:1,WR:2,TE:3,FLEX:4,K:5,DEF:6};
+  grid.innerHTML=STATE.rosters.map(r=>{
+    const user=getUser(r.owner_id);
+    const starters=new Set(r.starters.filter(p=>p&&p!=='0'));
+    const all=(r.players||[]).map(pid=>({pid,...playerInfo(pid),val:playerValue(pid),age:playerAge(pid),isStarter:starters.has(pid)}));
+    all.sort((a,b)=>(posOrder[a.pos]??9)-(posOrder[b.pos]??9));
+    const s=all.filter(p=>p.isStarter);
+    const bn=all.filter(p=>!p.isStarter);
+    const row=p=>`<div class="roster-row"><span class="pi-pos pos-${p.pos}" style="font-size:9px;padding:1px 4px">${p.pos}</span><span class="rr-name">${p.name} <span class="rr-meta">${p.team}</span></span><span class="rr-val">${p.val?p.val.toLocaleString():''}</span></div>`;
+    return `<div class="team-card"><h3>${teamLabel(user)}</h3><div class="tc-owner">${user?.display_name||'?'}</div>${s.map(row).join('')}<div class="divider"></div><div class="bench-label">BENCH</div>${bn.map(row).join('')}</div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════
+//  STANDINGS TAB
+// ════════════════════════════════════════════
+function buildStandingsTab(){
+  const rows=STATE.rosters.map(r=>{
+    const u=getUser(r.owner_id);
+    return {team:teamLabel(u),owner:u?.display_name||'?',wins:r.settings.wins,losses:r.settings.losses,ties:r.settings.ties,fpts:r.settings.fpts||0,waiver:r.settings.waiver_budget_used||0};
+  }).sort((a,b)=>b.wins-a.wins||b.fpts-a.fpts);
+  document.getElementById('standings-body').innerHTML=rows.map((r,i)=>`
+    <tr><td class="rank-cell">${i+1}</td><td>${r.team}</td><td>${r.owner}</td>
+    <td>${r.wins}-${r.losses}-${r.ties}</td><td>${r.fpts.toFixed(1)}</td><td>$${r.waiver}</td></tr>`).join('');
+}
+
+// ════════════════════════════════════════════
+//  BOOT
+// ════════════════════════════════════════════
+initAll();
+</script>
+</body>
+</html>
