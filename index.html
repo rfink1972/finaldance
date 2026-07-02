@@ -193,7 +193,8 @@ option{background:var(--midnight);}
 /* ── ROSTER CARDS ── */
 .section-title{color:var(--chalk);font-family:'Oswald';font-size:20px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--hairline);padding-bottom:10px;margin:28px 0 16px;display:flex;align-items:center;gap:8px;}
 .team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;}
-.team-card{background:var(--field);border:1px solid var(--hairline);border-radius:var(--radius);padding:14px;}
+.team-card{background:var(--field);border:1px solid var(--hairline);border-radius:var(--radius);padding:14px;min-width:0;}
+.roster-table-wrap{overflow-x:auto;}
 .team-card h3{color:var(--chalk);font-family:'Oswald';font-size:16px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;}
 .tc-owner{font-size:11px;color:var(--slate);margin-bottom:10px;}
 .roster-row{display:flex;gap:7px;align-items:center;padding:4px 0;font-size:12px;border-bottom:1px solid var(--hairline);}
@@ -205,7 +206,7 @@ option{background:var(--midnight);}
 .divider{border-top:1px dashed var(--hairline);margin:6px 0;}
 
 /* ── ROSTER / CAP TABLE ── */
-.roster-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px;}
+.roster-table{width:100%;min-width:310px;border-collapse:collapse;margin-top:8px;font-size:12px;}
 .roster-table thead th{background:var(--field-2);color:var(--slate);font-family:'Oswald';text-transform:uppercase;letter-spacing:1px;text-align:left;padding:6px 6px;font-size:10.5px;font-weight:600;border-bottom:1px solid var(--hairline);}
 .roster-table thead th:last-child{text-align:right;}
 .roster-table tbody td{padding:5px 6px;border-bottom:1px solid var(--hairline);vertical-align:middle;}
@@ -1136,6 +1137,7 @@ function buildRosterTab(){
     return `<div class="team-card">
       <h3>${teamLabel(user)}</h3>
       <div class="tc-owner">${user?.display_name||'?'}</div>
+      <div class="roster-table-wrap">
       <table class="roster-table">
         <thead><tr>
           <th>Pos</th><th>Player</th><th style="text-align:center">Age</th>
@@ -1159,6 +1161,7 @@ function buildRosterTab(){
           </tr>
         </tfoot>
       </table>
+      </div>
     </div>`;
   }).join('');
 }
