@@ -1187,15 +1187,16 @@ function buildStandingsTab(){
   });
 
   const PLAYOFF_CUT = 6;
-  const MY_TEAM = 'Flaming Burb';
+  const MY_OWNER = 'FlamingBurb';
   const makeTable=rows=>{
     const sorted=[...rows].sort((a,b)=>b.wins-a.wins||b.fpts-a.fpts);
     const tbody=sorted.map((r,i)=>{
       const rank=i+1;
+      const isMe=r.owner===MY_OWNER;
       const rankClass='rank-cell'+(rank===1?' rank-top':'');
-      const teamClass=r.team===MY_TEAM?' class="me-team"':'';
+      const teamClass=isMe?' class="me-team"':'';
       const rowClass=rank===PLAYOFF_CUT?' class="cut-line"':'';
-      return '<tr'+rowClass+'><td class="'+rankClass+'">'+rank+'</td><td'+teamClass+'>'+r.team+(r.team===MY_TEAM?' ★':'')+'</td><td>'+r.owner+'</td><td>'+r.wins+'-'+r.losses+'-'+r.ties+'</td><td>'+r.fpts.toFixed(1)+'</td><td>$'+r.waiver+'</td></tr>';
+      return '<tr'+rowClass+'><td class="'+rankClass+'">'+rank+'</td><td'+teamClass+'>'+r.team+(isMe?' ★':'')+'</td><td>'+r.owner+'</td><td>'+r.wins+'-'+r.losses+'-'+r.ties+'</td><td>'+r.fpts.toFixed(1)+'</td><td>$'+r.waiver+'</td></tr>';
     }).join('');
     return '<div class="table-wrap"><table><thead><tr><th>#</th><th>Team</th><th>Owner</th><th>W-L-T</th><th>Pts For</th><th>Waiver Used</th></tr></thead><tbody>'+tbody+'</tbody></table></div>';
   };
