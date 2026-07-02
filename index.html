@@ -407,17 +407,30 @@ function parseDPPlayers(csv){
   return map;
 }
 
-// Parses db_fpecr_latest.csv — filters to ecr_type='rp' (redraft positional PPR)
-// Builds name → {ecr, pos} for current-season cap value derivation
+// Parses db_fpecr_latest.csv — uses ecr_type='bo' (best-ball overall)
+// Groups by position, sorts by overall ECR, assigns positional rank (1-based)
+// Builds name → {ecr: positionalRank, pos} for cap value derivation
 function parseRdpEcr(csv){
   if(!csv) return {};
   const map = {};
   const rows = parseCSV(csv);
+  // Group 'bo' rows by position
+  const byPos = {};
   rows.forEach(r=>{
-    if(r.ecr_type !== 'rp') return;
+    if(r.ecr_type !== 'bo') return;
     const ecr = parseFloat(r.ecr);
     if(isNaN(ecr)) return;
-    map[normName(r.player)] = {ecr, pos: r.pos};
+    const pos = r.pos;
+    if(!['QB','RB','WR','TE'].includes(pos)) return;
+    if(!byPos[pos]) byPos[pos] = [];
+    byPos[pos].push({player: r.player, ecr, pos});
+  });
+  // Sort by overall ECR within each position → positional rank = index+1
+  Object.entries(byPos).forEach(([pos, players])=>{
+    players.sort((a,b)=>a.ecr-b.ecr);
+    players.forEach((p, idx)=>{
+      map[normName(p.player)] = {ecr: idx+1, pos};
+    });
   });
   return map;
 }
