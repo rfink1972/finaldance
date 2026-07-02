@@ -381,6 +381,18 @@ function csvRow(line){
 }
 function normName(n){return n.toLowerCase().replace(/[^a-z0-9]/g,'');}
 
+// DynastyProcess uses "Patrick Mahomes II", "Travis Etienne Jr.", etc.
+// Sleeper strips those suffixes. Try both when looking up.
+function dpLookup(playerName){
+  const direct = STATE.dpValues[normName(playerName)];
+  if(direct) return direct;
+  for(const sfx of [' II',' III',' IV',' Jr.',' Jr',' Sr.',' Sr']){
+    const v = STATE.dpValues[normName(playerName + sfx)];
+    if(v) return v;
+  }
+  return null;
+}
+
 function parseDPPlayers(csv){
   const rows = parseCSV(csv);
   const map = {};
@@ -486,7 +498,7 @@ function updateOwnedPickVal(sel){
 function isRookiePlayer(pid){
   if(!PM[pid]) return false;
   const [name] = PM[pid];
-  const dp = STATE.dpValues[normName(name)];
+  const dp = dpLookup(name);
   return dp && dp.age && dp.age <= 22;
 }
 
@@ -504,7 +516,7 @@ function ecrToCapValue(rank){
 }
 function getFPCapValue(playerName){
   // Use DynastyProcess ECR rank (already loaded) — FantasyPros API blocked by CORS
-  const dp = STATE.dpValues[normName(playerName)];
+  const dp = dpLookup(playerName);
   if(!dp) return 1;          // K/DEF/unranked — every rostered player has at least $1 cap hit
   return dp.ecr ? ecrToCapValue(dp.ecr) : 1;
 }
@@ -581,14 +593,13 @@ function getRosterPlayerCap(roster, pid){
 function playerValue(sleeperId){
   if(!PM[sleeperId]) return 0;
   const [name] = PM[sleeperId];
-  const key = normName(name);
-  const dp = STATE.dpValues[key];
+  const dp = dpLookup(name);
   return dp ? dp.value : 0;
 }
 function playerAge(sleeperId){
   if(!PM[sleeperId]) return null;
   const [name] = PM[sleeperId];
-  const dp = STATE.dpValues[normName(name)];
+  const dp = dpLookup(name);
   return dp ? dp.age : null;
 }
 function getUser(uid){ return STATE.users.find(u=>u.user_id===uid); }
