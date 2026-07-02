@@ -505,7 +505,8 @@ function ecrToCapValue(rank){
 function getFPCapValue(playerName){
   // Use DynastyProcess ECR rank (already loaded) — FantasyPros API blocked by CORS
   const dp = STATE.dpValues[normName(playerName)];
-  return (dp && dp.ecr) ? ecrToCapValue(dp.ecr) : 0;
+  if(!dp) return 1;          // K/DEF/unranked — every rostered player has at least $1 cap hit
+  return dp.ecr ? ecrToCapValue(dp.ecr) : 1;
 }
 
 function cycleHealth(btn, pid){
@@ -567,8 +568,12 @@ function getRosterPlayerCap(roster, pid){
     if(pm.salary)  return pm.salary;
     if(pm.cap)     return pm.cap;
   }
-  // 2. Fall back to FantasyPros ECR-derived estimate
-  if(PM[pid]){ const [name] = PM[pid]; return getFPCapValue(name); }
+  // 2. Fall back to DynastyProcess ECR-derived estimate
+  if(PM[pid]){ const [name, pos] = PM[pid];
+    if(pos==='K' || pos==='DEF') return 1; // Kickers/DEF not in DP — $1 floor
+    return getFPCapValue(name);
+  }
+  if(NFL_TEAMS[pid]) return 1; // DEF team IDs (e.g. "DEN") not in PM — $1 floor
   return 0;
 }
 
