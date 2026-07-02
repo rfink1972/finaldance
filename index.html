@@ -316,7 +316,7 @@ const NFL_TEAMS = {ARI:"Cardinals",ATL:"Falcons",BAL:"Ravens",BUF:"Bills",CAR:"P
 // ════════════════════════════════════════════
 //  STATE
 // ════════════════════════════════════════════
-let STATE = { rosters:[], users:[], dpValues:{}, dpPicks:[], tradedPicks:[], fpEcr:[], loaded:false };
+let STATE = { rosters:[], users:[], dpValues:{}, dpPicks:[], tradedPicks:[], fpEcr:[], rdpEcr:{}, loaded:false };
 
 // ════════════════════════════════════════════
 //  TABS
@@ -337,20 +337,20 @@ async function initAll(){
   document.getElementById('load-status').style.display='block';
   document.getElementById('trade-ui').style.display='none';
   try{
-    const [rosters, users, dpRaw, pickRaw, tradedPicksRaw, fpRaw] = await Promise.all([
+    const [rosters, users, dpRaw, pickRaw, tradedPicksRaw, rdpRaw] = await Promise.all([
       fetch(`https://api.sleeper.app/v1/league/${LEAGUE_ID}/rosters`).then(r=>r.json()),
       fetch(`https://api.sleeper.app/v1/league/${LEAGUE_ID}/users`).then(r=>r.json()),
       fetch('https://raw.githubusercontent.com/dynastyprocess/data/master/files/values-players.csv').then(r=>r.text()),
       fetch('https://raw.githubusercontent.com/dynastyprocess/data/master/files/values-picks.csv').then(r=>r.text()),
       fetch(`https://api.sleeper.app/v1/league/${LEAGUE_ID}/traded_picks`).then(r=>r.json()).catch(()=>[]),
-      fetch('https://partners.fantasypros.com/api/v1/consensus-rankings.php?sport=NFL&year=2025&week=0&position=ALL&type=ST&scoring=PPR&platform=3&max_results=300').then(r=>r.json()).catch(()=>({players:[]}))
+      fetch('https://raw.githubusercontent.com/dynastyprocess/data/master/files/db_fpecr_latest.csv').then(r=>r.text()).catch(()=>'')
     ]);
     STATE.rosters = rosters;
     STATE.users   = users;
     STATE.dpValues = parseDPPlayers(dpRaw);
     STATE.dpPicks  = parseDPPicks(pickRaw, STATE.dpValues);
     STATE.tradedPicks = Array.isArray(tradedPicksRaw) ? tradedPicksRaw : [];
-    STATE.fpEcr   = fpRaw.players || [];
+    STATE.rdpEcr  = parseRdpEcr(rdpRaw);
     STATE.loaded   = true;
     document.getElementById('load-status').style.display='none';
     document.getElementById('trade-ui').style.display='block';
@@ -405,6 +405,32 @@ function parseDPPlayers(csv){
     }
   });
   return map;
+}
+
+// Parses db_fpecr_latest.csv — filters to ecr_type='rp' (redraft positional PPR)
+// Builds name → {ecr, pos} for current-season cap value derivation
+function parseRdpEcr(csv){
+  if(!csv) return {};
+  const map = {};
+  const rows = parseCSV(csv);
+  rows.forEach(r=>{
+    if(r.ecr_type !== 'rp') return;
+    const ecr = parseFloat(r.ecr);
+    if(isNaN(ecr)) return;
+    map[normName(r.player)] = {ecr, pos: r.pos};
+  });
+  return map;
+}
+
+// Same suffix-appending trick as dpLookup — FP sometimes includes Jr./II
+function rdpLookup(playerName){
+  const direct = STATE.rdpEcr[normName(playerName)];
+  if(direct) return direct;
+  for(const sfx of [' II',' III',' IV',' Jr.',' Jr',' Sr.',' Sr']){
+    const v = STATE.rdpEcr[normName(playerName + sfx)];
+    if(v) return v;
+  }
+  return null;
 }
 
 function parseDPPicks(csv, playerMap){
@@ -503,17 +529,27 @@ function isRookiePlayer(pid){
 }
 
 // ════════════════════════════════════════════
-//  CAP VALUE FROM DYNASTYPROCESS VALUE
+//  CAP VALUE FROM REDRAFT POSITIONAL ECR
 // ════════════════════════════════════════════
-// Linear scale: value_1qb / 180 ≈ fair $240-cap salary
-// e.g. Ja'Marr Chase ~10000 → $56, Mahomes ~4600 → $26, bench stash ~200 → $1
-function valToCapValue(dpValue){
-  return Math.max(1, Math.round(dpValue / 180));
+// Uses FantasyPros redraft positional PPR rankings (via DynastyProcess db_fpecr_latest.csv)
+// Position-specific linear curves tuned to a ~$240 auction budget:
+//   QB1≈$40  QB5≈$30  QB12≈$12
+//   RB1≈$55  RB5≈$44  RB12≈$22
+//   WR1≈$50  WR5≈$42  WR12≈$28
+//   TE1≈$37  TE5≈$26  TE10≈$15  TE12≈$10
+function rdpEcrToCapValue(ecr, pos){
+  const curves = { QB:{base:40,slope:2.5}, RB:{base:55,slope:2.8}, WR:{base:50,slope:2.0}, TE:{base:38,slope:2.5} };
+  const c = curves[pos];
+  if(!c) return 1;
+  return Math.max(1, Math.round(c.base - (ecr - 1) * c.slope));
 }
 function getFPCapValue(playerName){
+  const rdp = rdpLookup(playerName);
+  if(rdp) return rdpEcrToCapValue(rdp.ecr, rdp.pos);
+  // Fallback: dynasty value scale for players not in redraft rankings
   const dp = dpLookup(playerName);
-  if(!dp) return 1;   // K/DEF/unranked — $1 floor
-  return valToCapValue(dp.value);
+  if(dp) return Math.max(1, Math.round(dp.value / 180));
+  return 1; // K/DEF/unranked — $1 floor
 }
 
 function cycleHealth(btn, pid){
