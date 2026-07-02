@@ -503,22 +503,17 @@ function isRookiePlayer(pid){
 }
 
 // ════════════════════════════════════════════
-//  CAP VALUE FROM FANTASYPROS ECR
+//  CAP VALUE FROM DYNASTYPROCESS VALUE
 // ════════════════════════════════════════════
-// Formula: $240 cap × 10 teams − $1 min-bid × 25 spots × 10 teams = $2,150 available
-// Allocate by rank using 1/√rank distribution (standard auction draft math)
-const ECR_POOL = 2150;
-const ECR_SUM  = 2 * Math.sqrt(300); // ≈ 33.6  (sum of 1/√i for i=1..300)
-
-function ecrToCapValue(rank){
-  if(!rank || rank > 300) return 1;
-  return Math.max(1, Math.round((1 / Math.sqrt(rank)) / ECR_SUM * ECR_POOL));
+// Linear scale: value_1qb / 180 ≈ fair $240-cap salary
+// e.g. Ja'Marr Chase ~10000 → $56, Mahomes ~4600 → $26, bench stash ~200 → $1
+function valToCapValue(dpValue){
+  return Math.max(1, Math.round(dpValue / 180));
 }
 function getFPCapValue(playerName){
-  // Use DynastyProcess ECR rank (already loaded) — FantasyPros API blocked by CORS
   const dp = dpLookup(playerName);
-  if(!dp) return 1;          // K/DEF/unranked — every rostered player has at least $1 cap hit
-  return dp.ecr ? ecrToCapValue(dp.ecr) : 1;
+  if(!dp) return 1;   // K/DEF/unranked — $1 floor
+  return valToCapValue(dp.value);
 }
 
 function cycleHealth(btn, pid){
