@@ -344,7 +344,7 @@ tbody tr:last-child td{border-bottom:0;}
 
       <div class="narrative" id="narrative"></div>
       <div id="integrity-block"></div>
-      <div class="source-note">Dynasty values: DynastyProcess (1QB PPR TEP) · Updated weekly · Pick values estimated from ECR curve · Cap hits entered manually</div>
+      <div class="source-note">Dynasty values: DynastyProcess (1QB PPR TEP) · Updated weekly · Pick values estimated from ECR curve · Cap estimates: budget-calibrated auction model (FP redraft ECR, TE/QB boosted, sums to $2,400 league budget) — editable</div>
     </div>
   </div>
 </div>
@@ -352,6 +352,7 @@ tbody tr:last-child td{border-bottom:0;}
 <!-- ══ TAB: ROSTERS ══ -->
 <div id="tab-roster" class="tab-pane">
   <div class="section-title">💰 Rosters / Cap</div>
+  <div id="cap-calibration" class="source-note" style="margin:4px 0 10px;"></div>
   <div id="roster-grid" class="team-grid"></div>
 </div>
 
@@ -402,7 +403,7 @@ const NFL_TEAMS = {ARI:"Cardinals",ATL:"Falcons",BAL:"Ravens",BUF:"Bills",CAR:"P
 // ════════════════════════════════════════════
 //  STATE
 // ════════════════════════════════════════════
-let STATE = { rosters:[], users:[], dpValues:{}, dpPicks:[], tradedPicks:[], fpEcr:[], rdpEcr:{}, loaded:false };
+let STATE = { rosters:[], users:[], dpValues:{}, dpPicks:[], tradedPicks:[], fpEcr:[], rdpEcr:{}, auctionVals:{}, loaded:false };
 
 // ════════════════════════════════════════════
 //  TABS
@@ -437,6 +438,7 @@ async function initAll(){
     STATE.dpPicks  = parseDPPicks(pickRaw, STATE.dpValues);
     STATE.tradedPicks = Array.isArray(tradedPicksRaw) ? tradedPicksRaw : [];
     STATE.rdpEcr  = parseRdpEcr(rdpRaw);
+    STATE.auctionVals = buildAuctionValues(rdpRaw);
     STATE.loaded   = true;
     document.getElementById('load-status').style.display='none';
     document.getElementById('trade-ui').style.display='block';
@@ -628,28 +630,65 @@ function isRookiePlayer(pid){
 }
 
 // ════════════════════════════════════════════
-//  CAP VALUE FROM REDRAFT POSITIONAL ECR
+//  BUDGET-CALIBRATED AUCTION VALUE MODEL
 // ════════════════════════════════════════════
-// Uses FantasyPros redraft positional PPR rankings (via DynastyProcess db_fpecr_latest.csv)
-// Position-specific linear curves tuned to a ~$240 auction budget:
-//   QB1≈$40  QB5≈$30  QB12≈$12
-//   RB1≈$55  RB5≈$44  RB12≈$22
-//   WR1≈$50  WR5≈$42  WR12≈$28
-//   TE1≈$37  TE5≈$26  TE10≈$15  TE12≈$10
-function rdpEcrToCapValue(ecr, pos){
-  const curves = { QB:{base:40,slope:2.5}, RB:{base:55,slope:2.8}, WR:{base:50,slope:2.0}, TE:{base:38,slope:2.5} };
-  const c = curves[pos];
-  if(!c) return 1;
-  return Math.max(1, Math.round(c.base - (ecr - 1) * c.slope));
+// Replaces the old per-position linear curves. Key improvements:
+//   1. Uses FantasyPros REDRAFT OVERALL ECR ('ro' rows) — a true cross-position
+//      market signal — instead of best-ball positional ranks.
+//   2. Exponential-decay price curve (auction markets decay exponentially,
+//      not linearly): weight = e^(-0.048·rank) + 0.24·e^(-0.0105·rank).
+//      The second term is a "tail" so mid/late players don't crash to $1.
+//   3. Position boosts for THIS league's scoring: TE ×1.15 (TE Premium),
+//      QB ×1.10 (6-pt passing TDs).
+//   4. Budget conservation: dollars are normalized so the top 160 skill
+//      players + $1 K/DEF slots sum to the league's total budget
+//      (10 teams × $240 = $2,400). Every player gets a $1 minimum plus a
+//      share of the remaining pool. Values self-recalibrate weekly as
+//      ECR updates — no hand-tuned slopes to maintain.
+// Sample output: overall #1 ≈ $68 (28% of cap), rank 12 ≈ $44,
+//   rank 24 ≈ $29, rank 60 ≈ $11, QB1 ≈ $34, TE1 ≈ $41.
+const AUCTION_TEAMS = 10, AUCTION_POOL_N = 160;
+const AUCTION_BOOST = { TE:1.15, QB:1.10 };
+function buildAuctionValues(csv){
+  if(!csv) return {};
+  const rows = parseCSV(csv);
+  // Redraft overall ECR, skill positions only
+  const ro = rows
+    .filter(r => r.ecr_type==='ro' && r.page_type==='redraft-overall'
+                 && ['QB','RB','WR','TE'].includes(r.pos)
+                 && !isNaN(parseFloat(r.ecr)))
+    .sort((a,b) => parseFloat(a.ecr) - parseFloat(b.ecr))
+    .slice(0, AUCTION_POOL_N);
+  if(ro.length === 0) return {};
+  // Total league budget minus $1 K + $1 DEF per team
+  const pool = AUCTION_TEAMS * CAP_MAX - AUCTION_TEAMS * 2;
+  const weights = ro.map((r,i) => {
+    const rank = i + 1;
+    const w = Math.exp(-0.048*rank) + 0.24*Math.exp(-0.0105*rank);
+    return w * (AUCTION_BOOST[r.pos] || 1.0);
+  });
+  const totW = weights.reduce((s,w)=>s+w, 0);
+  const rem  = pool - ro.length; // pool left after $1 minimums
+  const map = {};
+  ro.forEach((r,i) => {
+    map[normName(r.player)] = Math.max(1, Math.round(1 + rem * weights[i] / totW));
+  });
+  return map;
+}
+function auctionLookup(playerName){
+  const direct = STATE.auctionVals[normName(playerName)];
+  if(direct) return direct;
+  for(const sfx of [' II',' III',' IV',' Jr.',' Jr',' Sr.',' Sr']){
+    const v = STATE.auctionVals[normName(playerName + sfx)];
+    if(v) return v;
+  }
+  return null;
 }
 function getFPCapValue(playerName){
-  const rdp = rdpLookup(playerName);
-  if(rdp){
-    const ecrVal = rdpEcrToCapValue(rdp.ecr, rdp.pos);
-    if(ecrVal > 1) return ecrVal;
-    // ECR formula hit $1 floor — fall through to dynasty value for a better estimate
-  }
-  // Fallback: dynasty value scale (handles unranked players & low ECR floor cases)
+  // 1. Budget-calibrated auction model (top ~160 rosterable players)
+  const av = auctionLookup(playerName);
+  if(av) return av;
+  // 2. Fallback: dynasty value scale (unranked / deep-roster players)
   const dp = dpLookup(playerName);
   if(dp) return Math.max(1, Math.round(dp.value / 180));
   return 1; // K/DEF/truly unranked — $1 floor
@@ -1105,6 +1144,23 @@ function buildIntegrityCheck(teamA,teamB,aItems,bItems,aVal,bVal,aRosterId,bRost
 function buildRosterTab(){
   const grid = document.getElementById('roster-grid');
   const posOrder = {QB:0,RB:1,WR:2,TE:3,FLEX:4,K:5,DEF:6};
+
+  // League-wide calibration readout: model prices for all ranked players
+  // + $1 K/DEF slots should ≈ total league budget (teams × CAP_MAX)
+  const calEl = document.getElementById('cap-calibration');
+  if(calEl){
+    const modelTotal = Object.values(STATE.auctionVals).reduce((s,v)=>s+v,0)
+                     + AUCTION_TEAMS * 2; // $1 K + $1 DEF per team
+    const target = AUCTION_TEAMS * CAP_MAX;
+    const drift  = modelTotal - target;
+    const pct    = Math.abs(drift) / target * 100;
+    const ok     = pct <= 2;
+    calEl.innerHTML = `📐 Model calibration: league-wide estimated cap `
+      + `<strong style="color:${ok?'var(--turf)':'var(--ignite)'}">$${modelTotal.toLocaleString()}</strong>`
+      + ` / $${target.toLocaleString()} total budget (${AUCTION_TEAMS} teams × $${CAP_MAX})`
+      + ` · drift ${drift>=0?'+':''}${drift} (${pct.toFixed(1)}%)`
+      + (ok ? ' ✓' : ' ⚠ recheck curve');
+  }
 
   grid.innerHTML = STATE.rosters.map(r=>{
     const user     = getUser(r.owner_id);
