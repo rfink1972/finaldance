@@ -558,11 +558,15 @@ function rdpEcrToCapValue(ecr, pos){
 }
 function getFPCapValue(playerName){
   const rdp = rdpLookup(playerName);
-  if(rdp) return rdpEcrToCapValue(rdp.ecr, rdp.pos);
-  // Fallback: dynasty value scale for players not in redraft rankings
+  if(rdp){
+    const ecrVal = rdpEcrToCapValue(rdp.ecr, rdp.pos);
+    if(ecrVal > 1) return ecrVal;
+    // ECR formula hit $1 floor — fall through to dynasty value for a better estimate
+  }
+  // Fallback: dynasty value scale (handles unranked players & low ECR floor cases)
   const dp = dpLookup(playerName);
   if(dp) return Math.max(1, Math.round(dp.value / 180));
-  return 1; // K/DEF/unranked — $1 floor
+  return 1; // K/DEF/truly unranked — $1 floor
 }
 
 function cycleHealth(btn, pid){
